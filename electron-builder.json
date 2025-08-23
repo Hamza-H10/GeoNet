@@ -1,0 +1,12 @@
+{
+    "appId": "com.hamexlabs.geodesk",
+    "productName": "GeoDesk",
+    "files": [
+        "dist/**",
+        "electron/**",
+        "backend/**"
+    ],
+    "directories": {
+        "buildResources": "assets"
+    }
+}

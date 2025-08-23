@@ -1,0 +1,4 @@
+root: e:\\HAMZA\\PROJECTS\\hamexlabs\\geodesk 
+path: C:\Program Files\nodejs 
+arch: 64 
+proxy: none
