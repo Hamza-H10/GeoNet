@@ -18,7 +18,7 @@ import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
 import { AreaChart } from '../components/Charts';
-import { useTiltmeterData, valueFor, meterColor, computeSummary, type Meter } from '../components/TiltmeterData';
+import { valueFor, meterColor, computeSummary, type Meter, normalize, buildMeters } from '../components/TiltmeterData';
 import DataFetchSettings from '../components/DataFetchSettings';
 import RoomIcon from '@mui/icons-material/Room';
 import IconButton from '@mui/material/IconButton';
@@ -31,9 +31,48 @@ import TiltmeterTimeSeriesModal from '../components/charts/tiltmeterTimeSeries';
 import { useDevicesByCategory } from '../hooks/useDevices';
 
 export default function TiltmeterDashboard() {
-  const { meters } = useTiltmeterData();
   // Only show sensors that exist in Devices backend with category 'tiltmeter'
-  const { nameSet } = useDevicesByCategory('tiltmeter');
+  const { devices, nameSet } = useDevicesByCategory('tiltmeter');
+  const [meters, setMeters] = useState<Meter[]>([]);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+
+  // Fetch from Firestore REST: list documents under tiltmeter/{deviceId}/readings for all known devices
+  useEffect(() => {
+    let cancelled = false;
+    const deviceNames = devices.map(d => d.name).filter(Boolean);
+
+    const load = async () => {
+      try {
+        setFetchError(null);
+  if (deviceNames.length === 0) {
+          if (!cancelled) setMeters([]);
+          return;
+        }
+        const base = 'https://firestore.googleapis.com/v1/projects/getnet-hamexlabs/databases/(default)/documents/tiltmeter';
+        const fetchOne = async (devId: string) => {
+          const url = `${base}/${encodeURIComponent(devId)}/readings`;
+          try {
+            const res = await fetch(url);
+            if (!res.ok) return [] as ReturnType<typeof normalize>;
+            const json = await res.json();
+            return normalize(json);
+          } catch {
+            return [] as ReturnType<typeof normalize>;
+          }
+        };
+        const all = (await Promise.all(deviceNames.map(fetchOne))).flat();
+        const built = buildMeters(all);
+        if (!cancelled) setMeters(built);
+      } catch (e) {
+        if (!cancelled) setFetchError(e instanceof Error ? e.message : String(e));
+      }
+    };
+
+    load();
+    const t = setInterval(load, 10000);
+    return () => { cancelled = true; clearInterval(t); };
+  }, [devices]);
+
   const filteredMeters = useMemo(() => meters.filter(m => nameSet.has(m.id.trim().toLowerCase())), [meters, nameSet]);
   const [mode, setMode] = useState<'current' | 'today' | 'alltime'>('current');
   const [detail, setDetail] = useState<Meter | null>(null);
@@ -178,6 +217,12 @@ export default function TiltmeterDashboard() {
             </IconButton>
           </Box>
         </Box>
+
+        {fetchError ? (
+          <Paper sx={{ p: 2, mb: 2, bgcolor: '#fff3f3', border: '1px solid #ffcdd2' }}>
+            <Typography color="error">Failed to fetch Firestore readings: {fetchError}</Typography>
+          </Paper>
+        ) : null}
 
         {/* Summary cards */}
         <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: 'repeat(12, 1fr)', mb: 3 }}>

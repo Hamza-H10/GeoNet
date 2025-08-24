@@ -4,6 +4,7 @@ import Typography from '@mui/material/Typography';
 import { ToggleButtonGroup, ToggleButton } from '@mui/material';
 import { useMemo, useState } from 'react';
 import { AreaChart } from '../components/Charts';
+import FFTChartExpanded from '../components/charts/fftChart';
 import { useTiltmeterData } from '../components/TiltmeterData';
 
 export default function MasterDashboard() {
@@ -47,7 +48,7 @@ export default function MasterDashboard() {
     <Box sx={{ bgcolor: '#fff', minHeight: '100vh', minWidth: '100vw', width: '100vw', height: '100vh', flex: 1, display: 'flex', flexDirection: 'column', boxSizing: 'border-box', position: 'fixed', top: 0, left: 0, zIndex: 0, overflowY: 'auto' }}>
       <Box sx={{ maxWidth: 1200, mx: 'auto', width: '100%', px: { xs: 2, sm: 3, md: 4 }, flex: 1, display: 'flex', flexDirection: 'column' }}>
         <Typography variant="h5" sx={{ mt: 3, mb: 2, fontWeight: 700, color: '#111827' }}>Master Dashboard</Typography>
-        <Paper sx={{ p: 3, mb: 3, flex: 1 }}>
+  <Paper sx={{ p: 3, mb: 3, flex: 1 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2, gap: 2, flexWrap: 'wrap' }}>
             <Typography variant="h6" sx={{ fontWeight: 600 }}>Tiltmeter Time Series Averages</Typography>
             <ToggleButtonGroup size="small" exclusive value={range} onChange={(_, v) => v && setRange(v)}>
@@ -71,6 +72,11 @@ export default function MasterDashboard() {
           {range !== '1d' && (
             <Typography variant="caption" color="text.secondary">Showing last 24h hourly averages (extended ranges not available from source)</Typography>
           )}
+        </Paper>
+
+        {/* Expanded FFT Chart section */}
+        <Paper sx={{ p: 3, mb: 3 }}>
+          <FFTChartExpanded height={360} />
         </Paper>
       </Box>
     </Box>

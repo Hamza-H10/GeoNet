@@ -73,7 +73,7 @@ function getString(v: unknown): string | undefined {
   return typeof v === 'string' ? v : undefined;
 }
 
-function normalize(raw: unknown): RawTiltRecord[] {
+export function normalize(raw: unknown): RawTiltRecord[] {
   // Helper: parse Firestore number value
   const fsNum = (val: unknown): number | undefined => {
     if (!isRecord(val)) return toNumber(val) ?? undefined;
@@ -193,7 +193,7 @@ function hourOf(date: Date) {
 }
 
 // Group records by device and compute metrics
-function buildMeters(records: RawTiltRecord[]): Meter[] {
+export function buildMeters(records: RawTiltRecord[]): Meter[] {
   // Coalesce by deviceId
   const byDev = new Map<string, RawTiltRecord[]>();
   for (const r of records) {

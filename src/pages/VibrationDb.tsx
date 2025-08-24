@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { VibrationChart, ColoredSummary, type AxisThresholds } from '../components/charts/vibrationCharts';
 import { useDevicesByCategory } from '../hooks/useDevices';
 import AlarmIcon from '@mui/icons-material/Alarm';
+import FFTChartExpanded from '../components/charts/fftChart';
 
 // Server payload shape
 interface AccelPoint { x: number; y: number; z: number; t?: string }
@@ -182,6 +183,11 @@ export default function VibrationDb() {
             <VibrationChart data={data} showAlerts={showAlerts} thresholds={thresholds} />
           </Box>
           <ColoredSummary data={data} />
+        </Box>
+
+        {/* Expanded FFT Chart for selected device */}
+        <Box sx={{ mt: 3 }}>
+          <FFTChartExpanded deviceId={selectedDevice || undefined} height={360} />
         </Box>
 
         <Paper sx={{ mt: 3, p: 2 }}>
