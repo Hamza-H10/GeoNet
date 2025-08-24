@@ -6,7 +6,18 @@ export default defineConfig({
   base: './',
   plugins: [react()],
   build: {
-    sourcemap: true,
+    sourcemap: false,
+    target: 'es2020',
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          react: ['react', 'react-dom'],
+          router: ['react-router-dom'],
+          mui: ['@mui/material', '@mui/system'],
+          charts: ['react-apexcharts', 'apexcharts'],
+        }
+      }
+    }
   },
 
 })

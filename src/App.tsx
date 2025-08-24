@@ -15,13 +15,14 @@ declare global {
   }
 }
 
-import MasterDashboard from './pages/MasterDashboard';
-import BluetoothDb from './pages/BluetoothDb';
-import HistoricalData from './pages/HistoricalData';
-import Devices from './pages/Devices';
-import UserAccount from './pages/UserAccount';
-import TiltmeterDashboard from './pages/tiltmeterDb';
-import VibrationDb from './pages/VibrationDb';
+import { lazy, Suspense } from 'react';
+const MasterDashboard = lazy(() => import('./pages/MasterDashboard'));
+const BluetoothDb = lazy(() => import('./pages/BluetoothDb'));
+const HistoricalData = lazy(() => import('./pages/HistoricalData'));
+const Devices = lazy(() => import('./pages/Devices'));
+const UserAccount = lazy(() => import('./pages/UserAccount'));
+const TiltmeterDashboard = lazy(() => import('./pages/tiltmeterDb'));
+const VibrationDb = lazy(() => import('./pages/VibrationDb'));
 import Layout from './components/Layout';
 // import LoginPage from './pages/login'; // temporarily disabled
 // import type { RootState } from './store';
@@ -96,29 +97,31 @@ function App() {
       <Routes>
   {/* <Route path="/login" element={<LoginPage />} /> login disabled */}
         <Route element={<Layout />}>
-          <Route path="/" element={<ProtectedRoute element={<MasterDashboard />} />} />
+          <Route path="/" element={<Suspense fallback={<div /> }><ProtectedRoute element={<MasterDashboard />} /></Suspense>} />
           <Route
             path="/bluetooth"
             element={
-              <ProtectedRoute
-                element={
-                  <BluetoothDb
-                    serialInput={input}
-                    setSerialInput={setInput}
-                    serialLogs={logs}
-                    setSerialLogs={setLogs}
-                    sendSerialData={sendData}
-                  />
-                }
-              />
+              <Suspense fallback={<div /> }>
+                <ProtectedRoute
+                  element={
+                    <BluetoothDb
+                      serialInput={input}
+                      setSerialInput={setInput}
+                      serialLogs={logs}
+                      setSerialLogs={setLogs}
+                      sendSerialData={sendData}
+                    />
+                  }
+                />
+              </Suspense>
             }
           />
           {/* WiFi route removed */}
-          <Route path="/historical" element={<ProtectedRoute element={<HistoricalData />} />} />
-          <Route path="/devices" element={<ProtectedRoute element={<Devices />} />} />
-          <Route path="/tiltmeter" element={<ProtectedRoute element={<TiltmeterDashboard />} />} />
-          <Route path="/vibration" element={<ProtectedRoute element={<VibrationDb />} />} />
-          <Route path="/user" element={<ProtectedRoute element={<UserAccount />} />} />
+          <Route path="/historical" element={<Suspense fallback={<div /> }><ProtectedRoute element={<HistoricalData />} /></Suspense>} />
+          <Route path="/devices" element={<Suspense fallback={<div /> }><ProtectedRoute element={<Devices />} /></Suspense>} />
+          <Route path="/tiltmeter" element={<Suspense fallback={<div /> }><ProtectedRoute element={<TiltmeterDashboard />} /></Suspense>} />
+          <Route path="/vibration" element={<Suspense fallback={<div /> }><ProtectedRoute element={<VibrationDb />} /></Suspense>} />
+          <Route path="/user" element={<Suspense fallback={<div /> }><ProtectedRoute element={<UserAccount />} /></Suspense>} />
         </Route>
       </Routes>
     </Router>

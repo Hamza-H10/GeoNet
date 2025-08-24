@@ -40,7 +40,7 @@ export function VibrationChart({ data, showAlerts, thresholds }: { data: AccelPo
   const options: ApexOptions = {
     chart: {
       id: 'vibration-chart',
-      animations: { enabled: true, dynamicAnimation: { speed: 100 } },
+  animations: { enabled: true, dynamicAnimation: { speed: 180 } },
       toolbar: { show: true },
       zoom: { enabled: true, type: 'xy', autoScaleYaxis: true },
       background: '#fff',
