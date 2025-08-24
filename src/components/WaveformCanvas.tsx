@@ -242,53 +242,70 @@ export const WaveformCanvas = forwardRef<WaveformCanvasHandle, WaveformCanvasPro
   }, [waveforms, width, height, background, activeSeries, hoverX, viewIndices]);
 
   // Mouse interactions
+  // Throttle helpers
+  const rafId = useRef<number | null>(null);
+  const schedule = (fn: () => void) => {
+    if (rafId.current != null) cancelAnimationFrame(rafId.current);
+    rafId.current = requestAnimationFrame(() => { rafId.current = null; fn(); });
+  };
+
+  // Wheel zoom (passive, no preventDefault to avoid Chrome warnings)
   const onWheel: React.WheelEventHandler<HTMLCanvasElement> = (e) => {
-    e.preventDefault();
-    const rect = (e.target as HTMLCanvasElement).getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const anchor = Math.max(0, Math.min(1, x / Math.max(1, rect.width)));
-    const zoomFactor = e.deltaY < 0 ? 0.9 : 1.1; // in or out
-    setView(v => {
-      const center = v.start + (v.end - v.start) * anchor;
-      let half = (v.end - v.start) * zoomFactor / 2;
-      half = Math.max(0.0005, Math.min(0.5, half));
-      let start = center - half;
-      let end = center + half;
-      if (start < 0) { end -= start; start = 0; }
-      if (end > 1) { start -= (end - 1); end = 1; }
-      start = Math.max(0, start);
-      end = Math.min(1, end);
-      return { start, end };
+    const native = e.nativeEvent as WheelEvent;
+    const offsetX = (native as MouseEvent).offsetX;
+    const target = e.target as HTMLCanvasElement;
+    const widthPx = target.width / Math.max(1, window.devicePixelRatio);
+    const x = typeof offsetX === 'number' ? offsetX : widthPx / 2;
+    const anchor = Math.max(0, Math.min(1, x / Math.max(1, widthPx)));
+    const zoomFactor = native.deltaY < 0 ? 0.9 : 1.1; // in or out
+    schedule(() => {
+      setView(v => {
+        const center = v.start + (v.end - v.start) * anchor;
+        let half = (v.end - v.start) * zoomFactor / 2;
+        half = Math.max(0.0005, Math.min(0.5, half));
+        let start = center - half;
+        let end = center + half;
+        if (start < 0) { end -= start; start = 0; }
+        if (end > 1) { start -= (end - 1); end = 1; }
+        start = Math.max(0, start);
+        end = Math.min(1, end);
+        return { start, end };
+      });
     });
   };
 
   const onMouseMove: React.MouseEventHandler<HTMLCanvasElement> = (e) => {
-    const rect = (e.target as HTMLCanvasElement).getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    setHoverX(Math.max(0, Math.min(rect.width, x)));
+    const native = e.nativeEvent as MouseEvent;
+    const target = e.target as HTMLCanvasElement;
+    const widthPx = target.width / Math.max(1, window.devicePixelRatio);
+    const x = (native as MouseEvent).offsetX;
+    const px = typeof x === 'number' ? x : widthPx / 2;
+    schedule(() => setHoverX(Math.max(0, Math.min(widthPx, px))));
     if (isDragging && dragStartX.current != null) {
-      const dx = x - dragStartX.current;
-      const frac = dx / Math.max(1, rect.width);
-      setView(v => {
-        let start = v.start - frac;
-        let end = v.end - frac;
-        const widthF = end - start;
-        if (start < 0) { end -= start; start = 0; }
-        if (end > 1) { start -= (end - 1); end = 1; }
-        // keep width
-        if (end - start !== widthF) {
-          end = start + widthF;
-          if (end > 1) { start = 1 - widthF; end = 1; }
-        }
-        return { start, end };
+      const dx = px - dragStartX.current;
+      const frac = dx / Math.max(1, widthPx);
+      schedule(() => {
+        setView(v => {
+          let start = v.start - frac;
+          let end = v.end - frac;
+          const widthF = end - start;
+          if (start < 0) { end -= start; start = 0; }
+          if (end > 1) { start -= (end - 1); end = 1; }
+          if (end - start !== widthF) {
+            end = start + widthF;
+            if (end > 1) { start = 1 - widthF; end = 1; }
+          }
+          return { start, end };
+        });
       });
-      dragStartX.current = x;
+      dragStartX.current = px;
     }
   };
   const onMouseLeave: React.MouseEventHandler<HTMLCanvasElement> = () => setHoverX(null);
   const onMouseDown: React.MouseEventHandler<HTMLCanvasElement> = (e) => {
-    const rect = (e.target as HTMLCanvasElement).getBoundingClientRect();
-    dragStartX.current = e.clientX - rect.left;
+    const native = e.nativeEvent as MouseEvent;
+    const x = native.offsetX;
+    dragStartX.current = typeof x === 'number' ? x : 0;
     setDragging(true);
   };
   const onMouseUp: React.MouseEventHandler<HTMLCanvasElement> = () => {
@@ -311,7 +328,7 @@ export const WaveformCanvas = forwardRef<WaveformCanvasHandle, WaveformCanvasPro
   const hasData = series.some(s => s.data && s.data.length > 1);
 
   return (
-    <div ref={containerRef} style={{ width: '100%', position: 'relative' }}>
+  <div ref={containerRef} style={{ width: '100%', position: 'relative', overscrollBehavior: 'contain', touchAction: 'none' }}>
       <canvas ref={canvasRef} onWheel={onWheel} onMouseMove={onMouseMove} onMouseLeave={onMouseLeave} onMouseDown={onMouseDown} onMouseUp={onMouseUp} style={{ cursor: isDragging ? 'grabbing' : 'crosshair' }} />
       {!hasData && (
         <div style={{

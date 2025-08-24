@@ -2,6 +2,7 @@ import { Box, Typography, Switch, FormControlLabel, Paper, FormControl, InputLab
 import VibrationIcon from '@mui/icons-material/Vibration';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { VibrationChart, ColoredSummary, type AxisThresholds } from '../components/charts/vibrationCharts';
+import Visible from '../components/Visible';
 import { useDevicesByCategory } from '../hooks/useDevices';
 import AlarmIcon from '@mui/icons-material/Alarm';
 import FFTChartExpanded from '../components/charts/fftChart';
@@ -180,14 +181,14 @@ export default function VibrationDb() {
                 </Typography>
               </Paper>
             )}
-            <VibrationChart data={data} showAlerts={showAlerts} thresholds={thresholds} />
+            <Visible><VibrationChart data={data} showAlerts={showAlerts} thresholds={thresholds} /></Visible>
           </Box>
-          <ColoredSummary data={data} />
+          <Visible><ColoredSummary data={data} /></Visible>
         </Box>
 
         {/* Expanded FFT Chart for selected device */}
         <Box sx={{ mt: 3 }}>
-          <FFTChartExpanded deviceId={selectedDevice || undefined} height={360} />
+          <Visible><FFTChartExpanded deviceId={selectedDevice || undefined} height={360} /></Visible>
         </Box>
 
         <Paper sx={{ mt: 3, p: 2 }}>

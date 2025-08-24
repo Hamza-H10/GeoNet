@@ -4,6 +4,7 @@ import Typography from '@mui/material/Typography';
 import { ToggleButtonGroup, ToggleButton } from '@mui/material';
 import { useMemo, useState } from 'react';
 import { AreaChart } from '../components/Charts';
+import Visible from '../components/Visible';
 import FFTChartExpanded from '../components/charts/fftChart';
 import { useTiltmeterData } from '../components/TiltmeterData';
 
@@ -62,11 +63,11 @@ export default function MasterDashboard() {
           <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, alignItems: 'stretch' }}>
             <Box sx={{ minWidth: 0 }}>
               <Typography variant="subtitle1" sx={{ mb: 1 }}>Avg Tilt X/Y</Typography>
-              <AreaChart data={xyData} height={280} />
+              <Visible><AreaChart data={xyData} height={280} /></Visible>
             </Box>
             <Box sx={{ minWidth: 0 }}>
               <Typography variant="subtitle1" sx={{ mb: 1 }}>Avg Settlement Z</Typography>
-              <AreaChart data={zData} height={280} />
+              <Visible><AreaChart data={zData} height={280} /></Visible>
             </Box>
           </Box>
           {range !== '1d' && (
@@ -76,7 +77,7 @@ export default function MasterDashboard() {
 
         {/* Expanded FFT Chart section */}
         <Paper sx={{ p: 3, mb: 3 }}>
-          <FFTChartExpanded height={360} />
+          <Visible><FFTChartExpanded height={360} /></Visible>
         </Paper>
       </Box>
     </Box>

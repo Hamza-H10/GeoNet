@@ -136,22 +136,56 @@ export default function FFTChartExpanded({ deviceId: deviceIdProp, height = 360 
   }, [deviceId]);
 
   // Compute FFT data from last N samples
-  const fftData = useMemo(() => {
+  const [fftSeries, setFftSeries] = useState<{ xSpec: number[]; ySpec: number[]; zSpec: number[] } | null>(null);
+  const workerRef = useRef<Worker | null>(null);
+
+  // Compute FFT off main thread when possible
+  useEffect(() => {
     const N = Math.min(256, nearestPow2(samples.length));
-    if (!N || N < 32) return null;
+    if (!N || N < 32) { setFftSeries(null); return; }
     const slice = samples.slice(-N);
     const x = slice.map((d) => d.x);
     const y = slice.map((d) => d.y);
     const z = slice.map((d) => d.z);
 
-    const xSpec = dftMagnitude(x);
-    const ySpec = dftMagnitude(y);
-    const zSpec = dftMagnitude(z);
-    const labels = Array.from({ length: xSpec.length }, (_, i) => `${i}`);
+    let cancelled = false;
+    // Try worker
+    try {
+      if (!workerRef.current) {
+        // Vite supports new URL for worker modules
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        workerRef.current = new Worker(new URL('../../workers/fftWorker.ts', import.meta.url), { type: 'module' });
+      }
+      const w = workerRef.current;
+      let lastSet = 0;
+      const onMessage = (evt: MessageEvent<{ xSpec: number[]; ySpec: number[]; zSpec: number[] }>) => {
+        if (cancelled) return;
+        const now = performance.now();
+        if (now - lastSet < 100) return; // debounce updates to <=10fps
+        lastSet = now;
+        setFftSeries(evt.data);
+      };
+      w.addEventListener('message', onMessage as EventListener);
+      w.postMessage({ x, y, z });
+      return () => { cancelled = true; w.removeEventListener('message', onMessage as EventListener); };
+    } catch {
+      // Fallback to main-thread DFT
+      const xSpec = dftMagnitude(x);
+      const ySpec = dftMagnitude(y);
+      const zSpec = dftMagnitude(z);
+      if (!cancelled) setFftSeries({ xSpec, ySpec, zSpec });
+      return () => { cancelled = true; };
+    }
+  }, [samples]);
+
+  const fftData = useMemo(() => {
+    if (!fftSeries) return null;
+    const labels = Array.from({ length: fftSeries.xSpec.length }, (_, i) => `${i}`);
 
     const options: ApexOptions = {
-      chart: { type: 'area', foreColor: '#1f2937', background: '#ffffff', toolbar: { show: true } },
-      stroke: { curve: 'smooth', width: 3 },
+  chart: { type: 'area', foreColor: '#1f2937', background: '#ffffff', toolbar: { show: true }, animations: { enabled: true, dynamicAnimation: { speed: 150 } } },
+  stroke: { curve: 'smooth', width: 2 },
       dataLabels: {
         enabled: true,
         style: { fontSize: '12px', fontWeight: 700, colors: ['#111'] },
@@ -164,7 +198,7 @@ export default function FFTChartExpanded({ deviceId: deviceIdProp, height = 360 
         },
       },
       fill: { type: 'gradient', gradient: { shadeIntensity: 0.2, opacityFrom: 0.28, opacityTo: 0.06, stops: [0, 90, 100] } },
-      markers: { size: 0, strokeWidth: 0, hover: { size: 4 } },
+  markers: { size: 0, strokeWidth: 0, hover: { size: 0 } },
       colors: ['#e53935', '#43a047', '#1e88e5'],
       xaxis: {
         categories: labels,
@@ -182,12 +216,12 @@ export default function FFTChartExpanded({ deviceId: deviceIdProp, height = 360 
     };
 
     const series = [
-      { name: 'X', data: xSpec },
-      { name: 'Y', data: ySpec },
-      { name: 'Z', data: zSpec },
+      { name: 'X', data: fftSeries.xSpec },
+      { name: 'Y', data: fftSeries.ySpec },
+      { name: 'Z', data: fftSeries.zSpec },
     ];
     return { options, series };
-  }, [samples]);
+  }, [fftSeries]);
 
   return (
     <Paper sx={{ p: 3 }}>
