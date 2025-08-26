@@ -22,6 +22,7 @@ const HistoricalData = lazy(() => import('./pages/HistoricalData'));
 const Devices = lazy(() => import('./pages/Devices'));
 const UserAccount = lazy(() => import('./pages/UserAccount'));
 const TiltmeterDashboard = lazy(() => import('./pages/tiltmeterDb'));
+const TiltmeterDashboard2 = lazy(() => import('./pages/tiltmeterDb2'));
 const VibrationDb = lazy(() => import('./pages/VibrationDb'));
 import Layout from './components/Layout';
 // import LoginPage from './pages/login'; // temporarily disabled
@@ -120,6 +121,7 @@ function App() {
           <Route path="/historical" element={<Suspense fallback={<div /> }><ProtectedRoute element={<HistoricalData />} /></Suspense>} />
           <Route path="/devices" element={<Suspense fallback={<div /> }><ProtectedRoute element={<Devices />} /></Suspense>} />
           <Route path="/tiltmeter" element={<Suspense fallback={<div /> }><ProtectedRoute element={<TiltmeterDashboard />} /></Suspense>} />
+          <Route path="/tiltmeter2" element={<Suspense fallback={<div /> }><ProtectedRoute element={<TiltmeterDashboard2 />} /></Suspense>} />
           <Route path="/vibration" element={<Suspense fallback={<div /> }><ProtectedRoute element={<VibrationDb />} /></Suspense>} />
           <Route path="/user" element={<Suspense fallback={<div /> }><ProtectedRoute element={<UserAccount />} /></Suspense>} />
         </Route>

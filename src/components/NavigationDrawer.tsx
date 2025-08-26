@@ -16,6 +16,7 @@ import SettingsIcon from '@mui/icons-material/Settings';
 import AlarmIcon from '@mui/icons-material/Alarm';
 import BugReportIcon from '@mui/icons-material/BugReport';
 import LogoutIcon from '@mui/icons-material/Logout';
+import BatteryFullIcon from '@mui/icons-material/BatteryFull';
 import { Link, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import type { RootState } from '../store';
@@ -132,6 +133,7 @@ export default function NavigationDrawer({ children }: { children: React.ReactNo
           <Tooltip title="Vibration" placement="right"><IconButton component={Link} to="/vibration"><VibrationIcon /></IconButton></Tooltip>
           <Tooltip title="Devices" placement="right"><IconButton component={Link} to="/devices"><DevicesIcon /></IconButton></Tooltip>
           <Tooltip title="Tiltmeter Dashboard" placement="right"><IconButton component={Link} to="/tiltmeter"><DevicesIcon /></IconButton></Tooltip>
+          <Tooltip title="Tiltmeter 2" placement="right"><IconButton component={Link} to="/tiltmeter2"><BatteryFullIcon /></IconButton></Tooltip>
           {!auth.token ? (
             <Tooltip title="Login" placement="right"><IconButton component={Link} to="/login"><AccountCircleIcon /></IconButton></Tooltip>
           ) : (
@@ -182,6 +184,12 @@ export default function NavigationDrawer({ children }: { children: React.ReactNo
             <ListItemButton component={Link} to="/tiltmeter">
               <ListItemIcon><DevicesIcon /></ListItemIcon>
               <ListItemText primary="Tiltmeter Dashboard" />
+            </ListItemButton>
+          </ListItem>
+          <ListItem disablePadding>
+            <ListItemButton component={Link} to="/tiltmeter2">
+              <ListItemIcon><BatteryFullIcon /></ListItemIcon>
+              <ListItemText primary="Tiltmeter 2" />
             </ListItemButton>
           </ListItem>
           {!auth.token ? (

@@ -40,6 +40,14 @@ export default function TiltmeterDashboard() {
   useEffect(() => {
     let cancelled = false;
     const deviceNames = devices.map(d => d.name).filter(Boolean);
+    // Determine client-side fetch interval from settings (minutes → ms), fallback 10s
+    const getIntervalMs = () => {
+      try {
+        const v = localStorage.getItem('app.fetchIntervalMs');
+        const n = v ? Number(v) : NaN;
+        return Number.isFinite(n) && n > 0 ? n : 10_000;
+      } catch { return 10_000; }
+    };
 
     const load = async () => {
       try {
@@ -48,7 +56,10 @@ export default function TiltmeterDashboard() {
           if (!cancelled) setMeters([]);
           return;
         }
-        const base = 'https://firestore.googleapis.com/v1/projects/getnet-hamexlabs/databases/(default)/documents/tiltmeter';
+        // const base = 'https://firestore.googleapis.com/v1/projects/getnet-hamexlabs/databases/(default)/documents/tiltmeter';
+
+        const base = 'https://firestore.googleapis.com/v1/projects/hamexlabs-metro/databases/(default)/documents/tiltmeter';
+
         const fetchOne = async (devId: string) => {
           const url = `${base}/${encodeURIComponent(devId)}/readings`;
           try {
@@ -69,14 +80,24 @@ export default function TiltmeterDashboard() {
     };
 
     load();
-    const t = setInterval(load, 10000);
-    return () => { cancelled = true; clearInterval(t); };
+    let currentInterval = getIntervalMs();
+    let t = setInterval(load, currentInterval);
+    // React to interval changes (if user updates settings while on page)
+    const ping = setInterval(() => {
+      const newVal = getIntervalMs();
+      if (newVal !== currentInterval) {
+        currentInterval = newVal;
+        clearInterval(t);
+        t = setInterval(load, currentInterval);
+      }
+    }, 5_000);
+    return () => { cancelled = true; clearInterval(t); clearInterval(ping); };
   }, [devices]);
 
   const filteredMeters = useMemo(() => meters.filter(m => nameSet.has(m.id.trim().toLowerCase())), [meters, nameSet]);
   const [mode, setMode] = useState<'current' | 'today' | 'alltime'>('current');
   const [detail, setDetail] = useState<Meter | null>(null);
-  const [tileSize, setTileSize] = useState<'small' | 'medium' | 'large'>('large');
+  const [tileSize, setTileSize] = useState<'small' | 'medium' | 'large'>('small');
   const [mapOpen, setMapOpen] = useState(false);
   const [xyOpen, setXyOpen] = useState(false);
   const [xyMode, setXyMode] = useState<'current' | 'today' | 'alltime'>(mode);

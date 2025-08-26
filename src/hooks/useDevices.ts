@@ -49,3 +49,8 @@ export function useDevicesByCategory(category: string) {
 
     return { devices: filtered, nameSet, loading, error };
 }
+
+// Convenience hook: specifically fetch devices with category 'Tiltmeter'
+export function useTiltmeterDevices() {
+    return useDevicesByCategory('Tiltmeter');
+}
