@@ -84,5 +84,5 @@ Note: This loads the Vite dev server at http://localhost:5173. If the Vite dev s
 
 [To run the app]
 npm run dev - will start the vite-react frontend
-node backend/server.cjs - will start the backend node app
 npm run electron - will start the electron app
+npm run backend - node backend/server.cjs - will start the backend node app

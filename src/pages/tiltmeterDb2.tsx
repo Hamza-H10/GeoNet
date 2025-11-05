@@ -45,9 +45,9 @@ import ApexChart from 'react-apexcharts';
 import Tiltmeter3DChart from '../components/charts/tiltmeter3D';
 import { valueFor, meterColor, computeSummary, type Meter, buildMeters, type RawTiltRecord } from '../components/TiltmeterData';
 
-// Candidate device IDs to read from RTDB (001..020)
-const CANDIDATE_DEVICE_IDS = Array.from({ length: 20 }, (_, i) => `deviceId${String(i + 1).padStart(3, '0')}`);
-const RTDB_BASE = 'https://getnet-hamexlabs-default-rtdb.asia-southeast1.firebasedatabase.app';
+// Candidate device IDs to read from RTDB (just deviceId001 for the new data source)
+const CANDIDATE_DEVICE_IDS = ['deviceId001'];
+const RTDB_BASE = 'https://arduino-pro-mini-tracker-gsm-default-rtdb.asia-southeast1.firebasedatabase.app';
 
 // Parse timestamp key like 20250824204058 into epoch millis; returns NaN if not match
 function parseTsKey(tsKey: string): number {
@@ -391,7 +391,7 @@ export default function TiltmeterDashboard2() {
         <Paper sx={{ p: 2, mb: 3 }}>
       {filteredMeters.length === 0 && (
             <Typography variant="body2" sx={{ color: '#6b7280', mb: 1 }}>
-        No data found for candidate sensors: {CANDIDATE_DEVICE_IDS.join(', ')}.
+        No data found for sensor: {CANDIDATE_DEVICE_IDS.join(', ')}.
             </Typography>
           )}
           <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: 'repeat(12, 1fr)' }}>
