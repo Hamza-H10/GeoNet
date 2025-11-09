@@ -4,22 +4,18 @@ import { useNavigate } from 'react-router-dom';
 import { Box, Paper, TextField, Button, Typography, InputAdornment } from '@mui/material';
 import PhoneIphoneIcon from '@mui/icons-material/PhoneIphone';
 import LockIcon from '@mui/icons-material/Lock';
-import KeyIcon from '@mui/icons-material/Key';
-import { login, setTempToken } from '../slices/authSlice';
+import { login } from '../slices/authSlice';
 import loginBanner from '../assets/loginBanner.jpg';
 
 export default function LoginPage() {
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
-  const [otp, setOtp] = useState('');
-  const [stage, setStage] = useState<'password' | 'otp'>('password');
   const [info, setInfo] = useState<string>('');
   const [loading, setLoading] = useState(false);
-  const [tempTokenLocal, setTempTokenLocal] = useState<string | null>(null);
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const handlePasswordSubmit = async () => {
+  const handleLoginSubmit = async () => {
     setLoading(true);
     setInfo('');
     try {
@@ -30,36 +26,12 @@ export default function LoginPage() {
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || 'Login failed');
-      dispatch(setTempToken({ phone, tempToken: json.tempToken }));
-      setTempTokenLocal(json.tempToken);
-      sessionStorage.setItem('tempToken', json.tempToken);
-      setInfo(`OTP sent. Dev OTP: ${json.devOtp || '******'}`);
-      setStage('otp');
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : 'Login failed';
-      setInfo(msg);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleOtpSubmit = async () => {
-    setLoading(true);
-    setInfo('');
-    try {
-      const tempToken = tempTokenLocal || sessionStorage.getItem('tempToken') || '';
-      const res = await fetch('http://localhost:5174/api/auth/verify-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ otp, tempToken })
-      });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error || 'OTP verification failed');
+      // Direct login - no OTP required
       dispatch(login({ role: json.role, token: json.token }));
       localStorage.setItem('jwt', json.token);
       navigate('/');
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : 'OTP verification failed';
+      const msg = e instanceof Error ? e.message : 'Login failed';
       setInfo(msg);
     } finally {
       setLoading(false);
@@ -106,38 +78,63 @@ export default function LoginPage() {
         {/* Right side form */}
         <Box sx={{ p: 3, width: { xs: '100%', md: '50%' }, height: '100%', overflowY: 'auto' }}>
           <Typography variant="h6" sx={{ mb: 2 }}>Login</Typography>
-          {stage === 'password' ? (
-            <>
-              <TextField
-                label="Phone Number"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                fullWidth sx={{ mb: 2 }}
-                InputProps={{ startAdornment: <InputAdornment position="start"><PhoneIphoneIcon /></InputAdornment> }}
-              />
-              <TextField
-                label="Password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                fullWidth sx={{ mb: 2 }}
-                InputProps={{ startAdornment: <InputAdornment position="start"><LockIcon /></InputAdornment> }}
-              />
-              <Button variant="contained" fullWidth onClick={handlePasswordSubmit} disabled={loading || !phone || !password}>Continue</Button>
-            </>
-          ) : (
-            <>
-              <TextField
-                label="OTP"
-                value={otp}
-                onChange={(e) => setOtp(e.target.value)}
-                fullWidth sx={{ mb: 2 }}
-                InputProps={{ startAdornment: <InputAdornment position="start"><KeyIcon /></InputAdornment> }}
-              />
-              <Button variant="contained" fullWidth onClick={handleOtpSubmit} disabled={loading || !otp}>Verify OTP</Button>
-            </>
+          
+          <TextField
+            label="Phone Number"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            fullWidth sx={{ mb: 2 }}
+            InputProps={{ startAdornment: <InputAdornment position="start"><PhoneIphoneIcon /></InputAdornment> }}
+          />
+          <TextField
+            label="Password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            fullWidth sx={{ mb: 2 }}
+            onKeyPress={(e) => e.key === 'Enter' && !loading && phone && password && handleLoginSubmit()}
+            InputProps={{ startAdornment: <InputAdornment position="start"><LockIcon /></InputAdornment> }}
+          />
+          <Button 
+            variant="contained" 
+            fullWidth 
+            onClick={handleLoginSubmit} 
+            disabled={loading || !phone || !password}
+            sx={{ mb: 3 }}
+          >
+            {loading ? 'Logging in...' : 'Login'}
+          </Button>
+
+          {/* Credentials Info Box */}
+          <Paper elevation={2} sx={{ p: 2, bgcolor: '#f5f5f5', borderLeft: '4px solid #1976d2' }}>
+            <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 'bold' }}>
+              Test Credentials
+            </Typography>
+            <Typography variant="body2" sx={{ mb: 1 }}>
+              <strong>Admin Account:</strong>
+              <br />
+              Phone: <code>9999999999</code>
+              <br />
+              Password: <code>admin123</code>
+            </Typography>
+            <Typography variant="body2">
+              <strong>User Account:</strong>
+              <br />
+              Phone: <code>8888888888</code>
+              <br />
+              Password: <code>user123</code>
+            </Typography>
+          </Paper>
+
+          {!!info && (
+            <Typography 
+              variant="body2" 
+              color="error" 
+              sx={{ mt: 2, p: 1, bgcolor: '#ffebee', borderRadius: 1 }}
+            >
+              {info}
+            </Typography>
           )}
-          {!!info && <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>{info}</Typography>}
         </Box>
       </Paper>
     </Box>

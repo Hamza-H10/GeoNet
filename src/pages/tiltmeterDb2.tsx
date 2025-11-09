@@ -630,7 +630,7 @@ export default function TiltmeterDashboard2() {
                 </Paper>
                 {/* Current Y deflection in mm, beautiful card */}
                 <Paper sx={{ p: 1, display: 'flex', alignItems: 'center', gap: 1, bgcolor: 'rgba(16,185,129,0.08)', border: '1px solid #10b981', borderRadius: 2, flexDirection: 'column', justifyContent: 'center' }}>
-                  <Typography variant="caption" sx={{ color: '#10b981', fontWeight: 700 }}>Current Wall Tilt (MM)</Typography>
+                  <Typography variant="caption" sx={{ color: '#10b981', fontWeight: 700 }}>Current Tilt (MM)</Typography>
                   <Typography variant="h6" sx={{ color: '#10b981', fontWeight: 700, lineHeight: 1.1 }}>
                     {yAngleToMm(detail.currentY, heightMm).toFixed(2)} mm
                   </Typography>

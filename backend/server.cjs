@@ -94,10 +94,9 @@ app.post('/api/auth/login', (req, res) => {
   if (!user || !bcrypt.compareSync(password, user.passwordHash)) {
     return res.status(401).json({ error: 'Invalid credentials' });
   }
-  const otp = Math.floor(100000 + Math.random() * 900000).toString();
-  const tempToken = signJwt({ phone }, { expiresIn: '5m' });
-  tempTokens.set(tempToken, { phone, otp, expires: Date.now() + 5 * 60 * 1000 });
-  res.json({ tempToken, devOtp: otp });
+  // Direct login without OTP - return JWT token immediately
+  const token = signJwt({ sub: user.id, role: user.role }, { expiresIn: '8h' });
+  res.json({ token, role: user.role });
 });
 
 app.post('/api/auth/verify-otp', (req, res) => {

@@ -1,7 +1,8 @@
-import { HashRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route, useNavigate, Navigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { login } from './slices/authSlice';
+import type { RootState } from './store';
 // Add type for window.electronAPI if present
 declare global {
   interface Window {
@@ -24,9 +25,8 @@ const UserAccount = lazy(() => import('./pages/UserAccount'));
 const TiltmeterDashboard = lazy(() => import('./pages/tiltmeterDb'));
 const TiltmeterDashboard2 = lazy(() => import('./pages/tiltmeterDb2'));
 const VibrationDb = lazy(() => import('./pages/VibrationDb'));
+const LoginPage = lazy(() => import('./pages/login'));
 import Layout from './components/Layout';
-// import LoginPage from './pages/login'; // temporarily disabled
-// import type { RootState } from './store';
 
 function MenuActionListener() {
   const navigate = useNavigate();
@@ -43,7 +43,10 @@ function MenuActionListener() {
 }
 
 function ProtectedRoute({ element }: { element: JSX.Element; roles?: Array<'user' | 'admin'> }) {
-  // Auth temporarily bypassed while login is disabled
+  const auth = useSelector((state: RootState) => state.auth);
+  if (!auth.token) {
+    return <Navigate to="/login" replace />;
+  }
   return element;
 }
 
@@ -96,7 +99,7 @@ function App() {
     <Router basename="/">
       <MenuActionListener />
       <Routes>
-  {/* <Route path="/login" element={<LoginPage />} /> login disabled */}
+        <Route path="/login" element={<Suspense fallback={<div />}><LoginPage /></Suspense>} />
         <Route element={<Layout />}>
           <Route path="/" element={<Suspense fallback={<div /> }><ProtectedRoute element={<MasterDashboard />} /></Suspense>} />
           <Route
