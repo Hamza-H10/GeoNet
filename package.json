@@ -11,7 +11,9 @@
     "preview": "vite preview",
     "pack": "electron-builder",
     "lint": "eslint .",
-    "backend": "node backend/server.cjs"
+    "backend": "node backend/server.cjs",
+    "postinstall": "electron-builder install-app-deps",
+    "rebuild": "npm rebuild better-sqlite3 serialport"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
@@ -60,5 +62,20 @@
     "typescript": "~5.8.3",
     "typescript-eslint": "^8.35.1",
     "vite": "^7.0.6"
+  },
+  "build": {
+    "appId": "com.geodesk.app",
+    "productName": "GeoDesk",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "backend/**/*"
+    ],
+    "win": {
+      "target": "nsis"
+    }
   }
 }

@@ -17,6 +17,7 @@ import AlarmIcon from '@mui/icons-material/Alarm';
 import BugReportIcon from '@mui/icons-material/BugReport';
 import LogoutIcon from '@mui/icons-material/Logout';
 import BatteryFullIcon from '@mui/icons-material/BatteryFull';
+import ScreenRotationIcon from '@mui/icons-material/ScreenRotation';
 import { Link, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import type { RootState } from '../store';
@@ -126,18 +127,36 @@ export default function NavigationDrawer({ children }: { children: React.ReactNo
             gap: 0.5,
           }}
         >
-          <Tooltip title="Master Dashboard" placement="right"><IconButton component={Link} to="/"><HomeIcon /></IconButton></Tooltip>
-          <Tooltip title="Bluetooth DB" placement="right"><IconButton component={Link} to="/bluetooth"><BluetoothIcon /></IconButton></Tooltip>
-          {/* WiFi Data removed */}
-          <Tooltip title="Historical Data" placement="right"><IconButton component={Link} to="/historical"><HistoryIcon /></IconButton></Tooltip>
-          <Tooltip title="Vibration" placement="right"><IconButton component={Link} to="/vibration"><VibrationIcon /></IconButton></Tooltip>
-          <Tooltip title="Devices" placement="right"><IconButton component={Link} to="/devices"><DevicesIcon /></IconButton></Tooltip>
-          <Tooltip title="Tiltmeter Dashboard" placement="right"><IconButton component={Link} to="/tiltmeter"><DevicesIcon /></IconButton></Tooltip>
-          <Tooltip title="Tiltmeter 2" placement="right"><IconButton component={Link} to="/tiltmeter2"><BatteryFullIcon /></IconButton></Tooltip>
           {!auth.token ? (
-            <Tooltip title="Login" placement="right"><IconButton component={Link} to="/login"><AccountCircleIcon /></IconButton></Tooltip>
+            <>
+              <Tooltip title="Master Dashboard" placement="right"><IconButton component={Link} to="/"><HomeIcon /></IconButton></Tooltip>
+              <Tooltip title="Bluetooth DB" placement="right"><IconButton component={Link} to="/bluetooth"><BluetoothIcon /></IconButton></Tooltip>
+              {/* WiFi Data removed */}
+              <Tooltip title="Historical Data" placement="right"><IconButton component={Link} to="/historical"><HistoryIcon /></IconButton></Tooltip>
+              <Tooltip title="Vibration" placement="right"><IconButton component={Link} to="/vibration"><VibrationIcon /></IconButton></Tooltip>
+              <Tooltip title="Devices" placement="right"><IconButton component={Link} to="/devices"><DevicesIcon /></IconButton></Tooltip>
+              <Tooltip title="Tiltmeter Dashboard" placement="right"><IconButton component={Link} to="/tiltmeter"><DevicesIcon /></IconButton></Tooltip>
+              <Tooltip title="Tiltmeter 2" placement="right"><IconButton component={Link} to="/tiltmeter2"><ScreenRotationIcon /></IconButton></Tooltip>
+              <Tooltip title="Login" placement="right"><IconButton component={Link} to="/login"><AccountCircleIcon /></IconButton></Tooltip>
+            </>
+          ) : auth.role === 'admin' ? (
+            <>
+              <Tooltip title="Master Dashboard" placement="right"><IconButton component={Link} to="/"><HomeIcon /></IconButton></Tooltip>
+              <Tooltip title="Bluetooth DB" placement="right"><IconButton component={Link} to="/bluetooth"><BluetoothIcon /></IconButton></Tooltip>
+              {/* WiFi Data removed */}
+              <Tooltip title="Historical Data" placement="right"><IconButton component={Link} to="/historical"><HistoryIcon /></IconButton></Tooltip>
+              <Tooltip title="Vibration" placement="right"><IconButton component={Link} to="/vibration"><VibrationIcon /></IconButton></Tooltip>
+              <Tooltip title="Devices" placement="right"><IconButton component={Link} to="/devices"><DevicesIcon /></IconButton></Tooltip>
+              <Tooltip title="Tiltmeter Dashboard" placement="right"><IconButton component={Link} to="/tiltmeter"><DevicesIcon /></IconButton></Tooltip>
+              <Tooltip title="Tiltmeter 2" placement="right"><IconButton component={Link} to="/tiltmeter2"><ScreenRotationIcon /></IconButton></Tooltip>
+              <Tooltip title={`Logged in (${auth.role})`} placement="right"><IconButton onClick={handleLogout}><LogoutIcon /></IconButton></Tooltip>
+            </>
           ) : (
-            <Tooltip title={`Logged in (${auth.role})`} placement="right"><IconButton onClick={handleLogout}><LogoutIcon /></IconButton></Tooltip>
+            <>
+              <Tooltip title="Tiltmeter Dashboard" placement="right"><IconButton component={Link} to="/tiltmeter"><DevicesIcon /></IconButton></Tooltip>
+              <Tooltip title="Tiltmeter 2" placement="right"><IconButton component={Link} to="/tiltmeter2"><ScreenRotationIcon /></IconButton></Tooltip>
+              <Tooltip title={`Logged in (${auth.role})`} placement="right"><IconButton onClick={handleLogout}><LogoutIcon /></IconButton></Tooltip>
+            </>
           )}
         </Box>
       )}
@@ -149,63 +168,131 @@ export default function NavigationDrawer({ children }: { children: React.ReactNo
       >
         <Toolbar />
         <List>
-          <ListItem disablePadding>
-            <ListItemButton component={Link} to="/">
-              <ListItemIcon><HomeIcon /></ListItemIcon>
-              <ListItemText primary="Master Dashboard" />
-            </ListItemButton>
-          </ListItem>
-          <ListItem disablePadding>
-            <ListItemButton component={Link} to="/bluetooth">
-              <ListItemIcon><BluetoothIcon /></ListItemIcon>
-              <ListItemText primary="Bluetooth DB" />
-            </ListItemButton>
-          </ListItem>
-          {/* WiFi Data removed */}
-          <ListItem disablePadding>
-            <ListItemButton component={Link} to="/historical">
-              <ListItemIcon><HistoryIcon /></ListItemIcon>
-              <ListItemText primary="Historical Data" />
-            </ListItemButton>
-          </ListItem>
-          <ListItem disablePadding>
-            <ListItemButton component={Link} to="/vibration">
-              <ListItemIcon><VibrationIcon /></ListItemIcon>
-              <ListItemText primary="Vibration" />
-            </ListItemButton>
-          </ListItem>
-          <ListItem disablePadding>
-            <ListItemButton component={Link} to="/devices">
-              <ListItemIcon><DevicesIcon /></ListItemIcon>
-              <ListItemText primary="Devices" />
-            </ListItemButton>
-          </ListItem>
-          <ListItem disablePadding>
-            <ListItemButton component={Link} to="/tiltmeter">
-              <ListItemIcon><DevicesIcon /></ListItemIcon>
-              <ListItemText primary="Tiltmeter Dashboard" />
-            </ListItemButton>
-          </ListItem>
-          <ListItem disablePadding>
-            <ListItemButton component={Link} to="/tiltmeter2">
-              <ListItemIcon><BatteryFullIcon /></ListItemIcon>
-              <ListItemText primary="Tiltmeter 2" />
-            </ListItemButton>
-          </ListItem>
           {!auth.token ? (
-            <ListItem disablePadding>
-              <ListItemButton component={Link} to="/login">
-                <ListItemIcon><AccountCircleIcon /></ListItemIcon>
-                <ListItemText primary="Login" />
-              </ListItemButton>
-            </ListItem>
+            <>
+              <ListItem disablePadding>
+                <ListItemButton component={Link} to="/">
+                  <ListItemIcon><HomeIcon /></ListItemIcon>
+                  <ListItemText primary="Master Dashboard" />
+                </ListItemButton>
+              </ListItem>
+              <ListItem disablePadding>
+                <ListItemButton component={Link} to="/bluetooth">
+                  <ListItemIcon><BluetoothIcon /></ListItemIcon>
+                  <ListItemText primary="Bluetooth DB" />
+                </ListItemButton>
+              </ListItem>
+              {/* WiFi Data removed */}
+              <ListItem disablePadding>
+                <ListItemButton component={Link} to="/historical">
+                  <ListItemIcon><HistoryIcon /></ListItemIcon>
+                  <ListItemText primary="Historical Data" />
+                </ListItemButton>
+              </ListItem>
+              <ListItem disablePadding>
+                <ListItemButton component={Link} to="/vibration">
+                  <ListItemIcon><VibrationIcon /></ListItemIcon>
+                  <ListItemText primary="Vibration" />
+                </ListItemButton>
+              </ListItem>
+              <ListItem disablePadding>
+                <ListItemButton component={Link} to="/devices">
+                  <ListItemIcon><DevicesIcon /></ListItemIcon>
+                  <ListItemText primary="Devices" />
+                </ListItemButton>
+              </ListItem>
+              <ListItem disablePadding>
+                <ListItemButton component={Link} to="/tiltmeter">
+                  <ListItemIcon><DevicesIcon /></ListItemIcon>
+                  <ListItemText primary="Tiltmeter Dashboard" />
+                </ListItemButton>
+              </ListItem>
+              <ListItem disablePadding>
+                <ListItemButton component={Link} to="/tiltmeter2">
+                  <ListItemIcon><ScreenRotationIcon /></ListItemIcon>
+                  <ListItemText primary="Tiltmeter 2" />
+                </ListItemButton>
+              </ListItem>
+              <ListItem disablePadding>
+                <ListItemButton component={Link} to="/login">
+                  <ListItemIcon><AccountCircleIcon /></ListItemIcon>
+                  <ListItemText primary="Login" />
+                </ListItemButton>
+              </ListItem>
+            </>
+          ) : auth.role === 'admin' ? (
+            <>
+              <ListItem disablePadding>
+                <ListItemButton component={Link} to="/">
+                  <ListItemIcon><HomeIcon /></ListItemIcon>
+                  <ListItemText primary="Master Dashboard" />
+                </ListItemButton>
+              </ListItem>
+              <ListItem disablePadding>
+                <ListItemButton component={Link} to="/bluetooth">
+                  <ListItemIcon><BluetoothIcon /></ListItemIcon>
+                  <ListItemText primary="Bluetooth DB" />
+                </ListItemButton>
+              </ListItem>
+              {/* WiFi Data removed */}
+              <ListItem disablePadding>
+                <ListItemButton component={Link} to="/historical">
+                  <ListItemIcon><HistoryIcon /></ListItemIcon>
+                  <ListItemText primary="Historical Data" />
+                </ListItemButton>
+              </ListItem>
+              <ListItem disablePadding>
+                <ListItemButton component={Link} to="/vibration">
+                  <ListItemIcon><VibrationIcon /></ListItemIcon>
+                  <ListItemText primary="Vibration" />
+                </ListItemButton>
+              </ListItem>
+              <ListItem disablePadding>
+                <ListItemButton component={Link} to="/devices">
+                  <ListItemIcon><DevicesIcon /></ListItemIcon>
+                  <ListItemText primary="Devices" />
+                </ListItemButton>
+              </ListItem>
+              <ListItem disablePadding>
+                <ListItemButton component={Link} to="/tiltmeter">
+                  <ListItemIcon><DevicesIcon /></ListItemIcon>
+                  <ListItemText primary="Tiltmeter Dashboard" />
+                </ListItemButton>
+              </ListItem>
+              <ListItem disablePadding>
+                <ListItemButton component={Link} to="/tiltmeter2">
+                  <ListItemIcon><ScreenRotationIcon /></ListItemIcon>
+                  <ListItemText primary="Tiltmeter 2" />
+                </ListItemButton>
+              </ListItem>
+              <ListItem disablePadding>
+                <ListItemButton onClick={handleLogout}>
+                  <ListItemIcon><LogoutIcon /></ListItemIcon>
+                  <ListItemText primary={`Logout (${auth.role})`} />
+                </ListItemButton>
+              </ListItem>
+            </>
           ) : (
-            <ListItem disablePadding>
-              <ListItemButton onClick={handleLogout}>
-                <ListItemIcon><LogoutIcon /></ListItemIcon>
-                <ListItemText primary={`Logout (${auth.role})`} />
-              </ListItemButton>
-            </ListItem>
+            <>
+              <ListItem disablePadding>
+                <ListItemButton component={Link} to="/tiltmeter">
+                  <ListItemIcon><DevicesIcon /></ListItemIcon>
+                  <ListItemText primary="Tiltmeter Dashboard" />
+                </ListItemButton>
+              </ListItem>
+              <ListItem disablePadding>
+                <ListItemButton component={Link} to="/tiltmeter2">
+                  <ListItemIcon><ScreenRotationIcon /></ListItemIcon>
+                  <ListItemText primary="Tiltmeter 2" />
+                </ListItemButton>
+              </ListItem>
+              <ListItem disablePadding>
+                <ListItemButton onClick={handleLogout}>
+                  <ListItemIcon><LogoutIcon /></ListItemIcon>
+                  <ListItemText primary={`Logout (${auth.role})`} />
+                </ListItemButton>
+              </ListItem>
+            </>
           )}
         </List>
       </Drawer>
