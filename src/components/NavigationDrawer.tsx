@@ -16,7 +16,6 @@ import SettingsIcon from '@mui/icons-material/Settings';
 import AlarmIcon from '@mui/icons-material/Alarm';
 import BugReportIcon from '@mui/icons-material/BugReport';
 import LogoutIcon from '@mui/icons-material/Logout';
-import BatteryFullIcon from '@mui/icons-material/BatteryFull';
 import ScreenRotationIcon from '@mui/icons-material/ScreenRotation';
 import { Link, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
@@ -153,7 +152,6 @@ export default function NavigationDrawer({ children }: { children: React.ReactNo
             </>
           ) : (
             <>
-              <Tooltip title="Tiltmeter Dashboard" placement="right"><IconButton component={Link} to="/tiltmeter"><DevicesIcon /></IconButton></Tooltip>
               <Tooltip title="Tiltmeter 2" placement="right"><IconButton component={Link} to="/tiltmeter2"><ScreenRotationIcon /></IconButton></Tooltip>
               <Tooltip title={`Logged in (${auth.role})`} placement="right"><IconButton onClick={handleLogout}><LogoutIcon /></IconButton></Tooltip>
             </>
@@ -274,12 +272,6 @@ export default function NavigationDrawer({ children }: { children: React.ReactNo
             </>
           ) : (
             <>
-              <ListItem disablePadding>
-                <ListItemButton component={Link} to="/tiltmeter">
-                  <ListItemIcon><DevicesIcon /></ListItemIcon>
-                  <ListItemText primary="Tiltmeter Dashboard" />
-                </ListItemButton>
-              </ListItem>
               <ListItem disablePadding>
                 <ListItemButton component={Link} to="/tiltmeter2">
                   <ListItemIcon><ScreenRotationIcon /></ListItemIcon>

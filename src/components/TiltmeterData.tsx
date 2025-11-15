@@ -237,7 +237,7 @@ export function buildMeters(records: RawTiltRecord[]): Meter[] {
       const lon = enriched.find((e) => e.lon != null)?.lon ?? current.lon;
       return { lat, lon };
     })();
-    const loc = (latNum != null && lonNum != null) ? `${latNum.toFixed(5)}, ${lonNum.toFixed(5)}` : 'Unknown';
+    const loc = (latNum != null && lonNum != null) ? `${latNum.toFixed(5)}, ${lonNum.toFixed(5)}` : 'Site1';
 
     // Build 24h history by hour using max per hour within available data, tracking timestamp of that max
     const historyMap = new Map<number, { x: number; y: number; z: number; ts?: number }>();

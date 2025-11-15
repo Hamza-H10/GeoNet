@@ -45,36 +45,54 @@ import ApexChart from 'react-apexcharts';
 import Tiltmeter3DChart from '../components/charts/tiltmeter3D';
 import { valueFor, meterColor, computeSummary, type Meter, buildMeters, type RawTiltRecord } from '../components/TiltmeterData';
 
-// Candidate device IDs to read from RTDB (just deviceId001 for the new data source)
-const CANDIDATE_DEVICE_IDS = ['deviceId001'];
-const RTDB_BASE = 'https://arduino-pro-mini-tracker-gsm-default-rtdb.asia-southeast1.firebasedatabase.app';
+// Candidate device IDs to read from Firestore
+const CANDIDATE_DEVICE_IDS = ['tm1', 'tm2', 'tm3', 'tm4', 'tm5'];
+const FIRESTORE_BASE = 'https://firestore.googleapis.com/v1/projects/hamexlabs-metro/databases/(default)/documents/tiltmeter';
+const FIRESTORE_API_KEY = 'AIzaSyChzg_JqqEJfvOdxINMf8JP4gOWCeRtdcA';
 
-// Parse timestamp key like 20250824204058 into epoch millis; returns NaN if not match
-function parseTsKey(tsKey: string): number {
-  const m = /^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})$/.exec(String(tsKey).trim());
-  if (!m) return NaN;
-  const [, y, mo, d, h, mi, s] = m;
-  const dt = new Date(Number(y), Number(mo) - 1, Number(d), Number(h), Number(mi), Number(s));
-  return dt.getTime();
+// Parse Firestore timestamp to epoch millis
+function parseFirestoreTimestamp(timestampValue: string): number {
+  try {
+    return new Date(timestampValue).getTime();
+  } catch {
+    return Date.now();
+  }
 }
 
-// (timestamp parsing removed; not needed for mock generator)
+// Transform Firestore document to our internal format
+interface FirestoreDocument {
+  name: string;
+  fields: {
+    x_angle?: { doubleValue: number };
+    y_angle?: { doubleValue: number };
+    batteryPercent?: { doubleValue: number };
+    power_mW?: { doubleValue: number };
+    readingTime?: { timestampValue: string };
+  };
+  createTime: string;
+  updateTime: string;
+}
 
-// (RTDB transform removed; using mock data generator)
+interface FirestoreResponse {
+  documents?: FirestoreDocument[];
+}
 
-type RTDBEntry = { health?: string | number; x?: number; y?: number; timestamp?: number | string };
-type RTDBTsValue = RTDBEntry | Record<string, RTDBEntry>;
-type RTDBDeviceData = Record<string, RTDBTsValue>;
-
-function pickRTDBEntry(value: RTDBTsValue | undefined, deviceId: string): RTDBEntry {
-  if (!value || typeof value !== 'object') return {};
-  const obj = value as Record<string, unknown>;
-  if ('x' in obj || 'y' in obj || 'health' in obj) return obj as unknown as RTDBEntry;
-  if (deviceId in obj) {
-    const nested = obj[deviceId];
-    if (nested && typeof nested === 'object') return nested as RTDBEntry;
-  }
-  return {};
+function transformFirestoreDoc(doc: FirestoreDocument, deviceId: string): { rec: RawTiltRecord; health: number } {
+  const fields = doc.fields;
+  const x = fields.x_angle?.doubleValue ?? 0;
+  const y = fields.y_angle?.doubleValue ?? 0;
+  const battery = fields.batteryPercent?.doubleValue ?? 0;
+  const timestamp = fields.readingTime?.timestampValue 
+    ? parseFirestoreTimestamp(fields.readingTime.timestampValue)
+    : parseFirestoreTimestamp(doc.createTime);
+  
+  const rec: RawTiltRecord = {
+    deviceId,
+    timestamp,
+    accelerometer: { x_angle: x, y_angle: y, z_displacement_mm: 0 }
+  };
+  
+  return { rec, health: battery };
 }
 
 export default function TiltmeterDashboard2() {
@@ -106,39 +124,15 @@ export default function TiltmeterDashboard2() {
 
     const fetchLatestForDevice = async (deviceId: string) => {
       try {
-        const url = `${RTDB_BASE}/${encodeURIComponent(deviceId)}.json`;
+        const url = `${FIRESTORE_BASE}/${encodeURIComponent(deviceId)}/readings?key=${FIRESTORE_API_KEY}`;
         const res = await fetch(url);
         if (!res.ok) return null;
-        const json: unknown = await res.json();
-        if (!json || typeof json !== 'object') return null;
-        const entries = Object.entries(json as RTDBDeviceData);
-        if (entries.length === 0) return null;
-        // Resolve timestamps using payload.timestamp when present; fallback to key parsing
-        const enhanced = entries.map(([k, raw]) => {
-          const p = pickRTDBEntry(raw, deviceId) as RTDBEntry;
-          const tRaw = p?.timestamp as unknown;
-          let ts = NaN;
-          if (typeof tRaw === 'number') {
-            // if seconds, scale to ms
-            ts = tRaw > 1e12 ? tRaw : tRaw * 1000;
-          } else if (typeof tRaw === 'string') {
-            const d = Date.parse(tRaw);
-            ts = Number.isFinite(d) ? d : parseTsKey(tRaw);
-          }
-          if (!Number.isFinite(ts)) ts = parseTsKey(k);
-          return { k, payload: p, ts };
-        });
-        enhanced.sort((a, b) => a.ts - b.ts);
-        const latest = enhanced[enhanced.length - 1];
-        const payload = latest.payload;
-        const ts = Number.isFinite(latest.ts) ? latest.ts : Date.now();
-        const x = Number(payload?.x ?? 0) || 0;
-        const y = Number(payload?.y ?? 0) || 0;
-        const healthRaw = String(payload?.health ?? '');
-        const pct = Number(String(healthRaw).replace(/[^\d.]+/g, ''));
-        const health = Number.isFinite(pct) ? Math.max(0, Math.min(100, pct)) : 0;
-        const rec: RawTiltRecord = { deviceId, timestamp: ts, accelerometer: { x_angle: x, y_angle: y, z_displacement_mm: 0 } };
-        return { rec, health } as { rec: RawTiltRecord; health: number };
+        const json: FirestoreResponse = await res.json();
+        if (!json.documents || json.documents.length === 0) return null;
+        
+        // Get the latest document (last in array, assuming sorted by time)
+        const latest = json.documents[json.documents.length - 1];
+        return transformFirestoreDoc(latest, deviceId);
       } catch {
         return null;
       }
@@ -155,6 +149,15 @@ export default function TiltmeterDashboard2() {
         if (r && r.rec) {
           out.push(r.rec);
           battery.set(devId, r.health);
+        } else {
+          // Create placeholder record for devices with no data
+          const placeholderRec: RawTiltRecord = {
+            deviceId: devId,
+            timestamp: Date.now(),
+            accelerometer: { x_angle: 0, y_angle: 0, z_displacement_mm: 0 }
+          };
+          out.push(placeholderRec);
+          battery.set(devId, 0);
         }
       }
       // Build meters from latest-only records
@@ -180,32 +183,31 @@ export default function TiltmeterDashboard2() {
     const loadHistory = async () => {
       if (!detail) { setDetailHistory([]); return; }
       try {
-        const url = `${RTDB_BASE}/${encodeURIComponent(detail.id)}.json`;
+        const url = `${FIRESTORE_BASE}/${encodeURIComponent(detail.id)}/readings?key=${FIRESTORE_API_KEY}`;
         const res = await fetch(url);
         if (!res.ok) { setDetailHistory([]); return; }
-        const json: unknown = await res.json();
-        const pairs = Object.entries((json as RTDBDeviceData) || {});
-        const entries = pairs.map(([k, raw]) => {
-          const p = pickRTDBEntry(raw, detail.id) as RTDBEntry;
-          const tRaw = p?.timestamp as unknown;
-          let ts = NaN;
-          if (typeof tRaw === 'number') {
-            ts = tRaw > 1e12 ? tRaw : tRaw * 1000;
-          } else if (typeof tRaw === 'string') {
-            const d = Date.parse(tRaw);
-            ts = Number.isFinite(d) ? d : parseTsKey(tRaw);
-          }
-          if (!Number.isFinite(ts)) ts = parseTsKey(k);
-          if (!Number.isFinite(ts)) ts = Date.now();
+        const json: FirestoreResponse = await res.json();
+        if (!json.documents) { setDetailHistory([]); return; }
+        
+        const entries = json.documents.map(doc => {
+          const fields = doc.fields;
+          const x = fields.x_angle?.doubleValue ?? 0;
+          const y = fields.y_angle?.doubleValue ?? 0;
+          const battery = fields.batteryPercent?.doubleValue;
+          const timestamp = fields.readingTime?.timestampValue 
+            ? parseFirestoreTimestamp(fields.readingTime.timestampValue)
+            : parseFirestoreTimestamp(doc.createTime);
+          
           return {
-            ts,
-            x: Number(p?.x ?? 0) || 0,
-            y: Number(p?.y ?? 0) || 0,
-            health: ((): number | undefined => { const n = Number(String(p?.health ?? '').replace(/[^\d.]+/g, '')); return Number.isFinite(n) ? Math.max(0, Math.min(100, n)) : undefined; })()
+            ts: timestamp,
+            x,
+            y,
+            health: battery !== undefined ? battery : undefined
           };
         });
-  entries.sort((a, b) => a.ts - b.ts);
-  if (!cancelled) setDetailHistory(entries);
+        
+        entries.sort((a, b) => a.ts - b.ts);
+        if (!cancelled) setDetailHistory(entries);
       } catch {
         if (!cancelled) setDetailHistory([]);
       }
@@ -287,13 +289,16 @@ export default function TiltmeterDashboard2() {
 
   const { maxToday, allTimeHigh, recent } = useMemo(() => computeSummary(filteredMeters), [filteredMeters]);
   const counts = useMemo(() => {
-    let safe = 0, warning = 0, danger = 0;
+    let safe = 0, warning = 0, danger = 0, active = 0;
     for (const m of filteredMeters) {
       const v = Math.max(m.currentX, m.currentY);
       if (v < normalCutoff) safe++; else if (v < dangerCutoff) warning++; else danger++;
+      // Count as active if battery > 0
+      const batteryPct = healthByDevice.get(m.id) ?? 0;
+      if (batteryPct > 0) active++;
     }
-    return { safe, warning, danger };
-  }, [filteredMeters, normalCutoff, dangerCutoff]);
+    return { safe, warning, danger, active };
+  }, [filteredMeters, normalCutoff, dangerCutoff, healthByDevice]);
 
   const alertActive = useMemo(() => filteredMeters.some(m => Math.max(m.currentX, m.currentY) >= dangerCutoff), [filteredMeters, dangerCutoff]);
 
@@ -348,50 +353,42 @@ export default function TiltmeterDashboard2() {
         ) : null}
 
         {/* Summary cards */}
-        <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: 'repeat(12, 1fr)', mb: 3 }}>
-          <Box sx={{ gridColumn: { xs: 'span 6', sm: 'span 4', md: 'span 2' } }}>
-            <Paper sx={{ p: 2, textAlign: 'center' }}>
-              <Typography variant="h4" sx={{ fontWeight: 700, color: '#111827' }}>{filteredMeters.length}</Typography>
-              <Typography sx={{ color: '#6b7280' }}>Total Sensors</Typography>
-            </Paper>
-          </Box>
-          <Box sx={{ gridColumn: { xs: 'span 6', sm: 'span 4', md: 'span 2' } }}>
-            <Paper sx={{ p: 2, textAlign: 'center' }}>
-              <Typography variant="h4" sx={{ fontWeight: 700, color: '#10b981' }}>{counts.safe}</Typography>
-              <Typography sx={{ color: '#6b7280' }}>Normal</Typography>
-            </Paper>
-          </Box>
-          <Box sx={{ gridColumn: { xs: 'span 6', sm: 'span 4', md: 'span 2' } }}>
-            <Paper sx={{ p: 2, textAlign: 'center' }}>
-              <Typography variant="h4" sx={{ fontWeight: 700, color: '#f59e0b' }}>{counts.warning}</Typography>
-              <Typography sx={{ color: '#6b7280' }}>Warning</Typography>
-            </Paper>
-          </Box>
-          <Box sx={{ gridColumn: { xs: 'span 6', sm: 'span 4', md: 'span 2' } }}>
-            <Paper sx={{ p: 2, textAlign: 'center' }}>
-              <Typography variant="h4" sx={{ fontWeight: 700, color: '#ef4444' }}>{counts.danger}</Typography>
-              <Typography sx={{ color: '#6b7280' }}>Danger</Typography>
-            </Paper>
-          </Box>
-          <Box sx={{ gridColumn: { xs: 'span 6', sm: 'span 4', md: 'span 2' } }}>
-            <Paper sx={{ p: 2, textAlign: 'center' }}>
-              <Typography variant="h4" sx={{ fontWeight: 700, color: '#3b82f6' }}>{maxToday.toFixed(1)}°</Typography>
-              <Typography sx={{ color: '#6b7280' }}>Max Today</Typography>
-            </Paper>
-          </Box>
-          <Box sx={{ gridColumn: { xs: 'span 6', sm: 'span 4', md: 'span 2' } }}>
-            <Paper sx={{ p: 2, textAlign: 'center' }}>
-              <Typography variant="h4" sx={{ fontWeight: 700, color: '#7c3aed' }}>{allTimeHigh.toFixed(1)}°</Typography>
-              <Typography sx={{ color: '#6b7280' }}>All Time High</Typography>
-            </Paper>
-          </Box>
+        <Box sx={{ display: 'flex', gap: 1.5, mb: 3, flexWrap: 'nowrap', overflowX: 'auto' }}>
+          <Paper sx={{ p: 1.5, textAlign: 'center', minWidth: 120, flex: '1 1 0' }} elevation={2}>
+            <Typography variant="h5" sx={{ fontWeight: 700, color: '#111827', fontSize: '1.5rem' }}>{filteredMeters.length}</Typography>
+            <Typography sx={{ color: '#6b7280', fontSize: '0.75rem' }}>Total Sensors</Typography>
+          </Paper>
+          <Paper sx={{ p: 1.5, textAlign: 'center', minWidth: 120, flex: '1 1 0' }} elevation={2}>
+            <Typography variant="h5" sx={{ fontWeight: 700, color: '#6366f1', fontSize: '1.5rem' }}>{counts.active}</Typography>
+            <Typography sx={{ color: '#6b7280', fontSize: '0.75rem' }}>Active Devices</Typography>
+          </Paper>
+          <Paper sx={{ p: 1.5, textAlign: 'center', minWidth: 120, flex: '1 1 0' }} elevation={2}>
+            <Typography variant="h5" sx={{ fontWeight: 700, color: '#10b981', fontSize: '1.5rem' }}>{counts.safe}</Typography>
+            <Typography sx={{ color: '#6b7280', fontSize: '0.75rem' }}>Normal</Typography>
+          </Paper>
+          <Paper sx={{ p: 1.5, textAlign: 'center', minWidth: 120, flex: '1 1 0' }} elevation={2}>
+            <Typography variant="h5" sx={{ fontWeight: 700, color: '#f59e0b', fontSize: '1.5rem' }}>{counts.warning}</Typography>
+            <Typography sx={{ color: '#6b7280', fontSize: '0.75rem' }}>Warning</Typography>
+          </Paper>
+          <Paper sx={{ p: 1.5, textAlign: 'center', minWidth: 120, flex: '1 1 0' }} elevation={2}>
+            <Typography variant="h5" sx={{ fontWeight: 700, color: '#ef4444', fontSize: '1.5rem' }}>{counts.danger}</Typography>
+            <Typography sx={{ color: '#6b7280', fontSize: '0.75rem' }}>Danger</Typography>
+          </Paper>
+          <Paper sx={{ p: 1.5, textAlign: 'center', minWidth: 120, flex: '1 1 0' }} elevation={2}>
+            <Typography variant="h5" sx={{ fontWeight: 700, color: '#3b82f6', fontSize: '1.5rem' }}>{maxToday.toFixed(1)}°</Typography>
+            <Typography sx={{ color: '#6b7280', fontSize: '0.75rem' }}>Max Today</Typography>
+          </Paper>
+          <Paper sx={{ p: 1.5, textAlign: 'center', minWidth: 120, flex: '1 1 0' }} elevation={2}>
+            <Typography variant="h5" sx={{ fontWeight: 700, color: '#7c3aed', fontSize: '1.5rem' }}>{allTimeHigh.toFixed(1)}°</Typography>
+            <Typography sx={{ color: '#6b7280', fontSize: '0.75rem' }}>All Time High</Typography>
+          </Paper>
         </Box>
 
         {/* Status grid (no Z bar; show battery) */}
         <Paper sx={{ p: 2, mb: 3 }}>
       {filteredMeters.length === 0 && (
             <Typography variant="body2" sx={{ color: '#6b7280', mb: 1 }}>
-        No data found for sensor: {CANDIDATE_DEVICE_IDS.join(', ')}.
+        No data found for sensor: {CANDIDATE_DEVICE_IDS.join(', ')}. Check Firestore connection.
             </Typography>
           )}
           <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: 'repeat(12, 1fr)' }}>

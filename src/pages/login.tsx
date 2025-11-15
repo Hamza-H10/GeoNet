@@ -29,7 +29,12 @@ export default function LoginPage() {
       // Direct login - no OTP required
       dispatch(login({ role: json.role, token: json.token }));
       localStorage.setItem('jwt', json.token);
-      navigate('/');
+      // Navigate based on user role
+      if (json.role === 'user') {
+        navigate('/tiltmeter2');
+      } else {
+        navigate('/');
+      }
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Login failed';
       setInfo(msg);
@@ -104,27 +109,6 @@ export default function LoginPage() {
           >
             {loading ? 'Logging in...' : 'Login'}
           </Button>
-
-          {/* Credentials Info Box */}
-          <Paper elevation={2} sx={{ p: 2, bgcolor: '#f5f5f5', borderLeft: '4px solid #1976d2' }}>
-            <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 'bold' }}>
-              Test Credentials
-            </Typography>
-            <Typography variant="body2" sx={{ mb: 1 }}>
-              <strong>Admin Account:</strong>
-              <br />
-              Phone: <code>9999999999</code>
-              <br />
-              Password: <code>admin123</code>
-            </Typography>
-            <Typography variant="body2">
-              <strong>User Account:</strong>
-              <br />
-              Phone: <code>8888888888</code>
-              <br />
-              Password: <code>user123</code>
-            </Typography>
-          </Paper>
 
           {!!info && (
             <Typography 

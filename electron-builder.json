@@ -7,6 +7,26 @@
         "backend/**"
     ],
     "directories": {
-        "buildResources": "assets"
-    }
+        "buildResources": "assets",
+        "output": "release"
+    },
+    "win": {
+        "target": [
+            {
+                "target": "nsis",
+                "arch": ["x64"]
+            }
+        ],
+        "icon": "assets/icon.ico",
+        "publisherName": "HamexLabs",
+        "verifyUpdateCodeSignature": false
+    },
+    "nsis": {
+        "oneClick": false,
+        "allowToChangeInstallationDirectory": true,
+        "createDesktopShortcut": true,
+        "createStartMenuShortcut": true,
+        "shortcutName": "GeoDesk"
+    },
+    "publish": null
 }
