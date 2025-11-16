@@ -24,7 +24,7 @@ const db = new Database(dbPath);
 db.exec(`
   CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    phone TEXT UNIQUE NOT NULL,
+    username TEXT UNIQUE NOT NULL,
     passwordHash TEXT NOT NULL,
     role TEXT NOT NULL CHECK(role IN ('user','admin'))
   );
@@ -52,9 +52,9 @@ db.exec(`
 // Seed users if table empty
 const userCount = db.prepare('SELECT COUNT(*) as c FROM users').get().c;
 if (!userCount) {
-  const seed = db.prepare('INSERT INTO users (phone, passwordHash, role) VALUES (?, ?, ?)');
-  seed.run('9999999999', bcrypt.hashSync('admin123', 8), 'admin');
-  seed.run('8888888888', bcrypt.hashSync('user123', 8), 'user');
+  const seed = db.prepare('INSERT INTO users (username, passwordHash, role) VALUES (?, ?, ?)');
+  seed.run('admin', bcrypt.hashSync('admin123', 8), 'admin');
+  seed.run('user', bcrypt.hashSync('user123', 8), 'user');
 }
 
 // Seed devices if empty
@@ -88,9 +88,9 @@ function verifyJwt(token) {
 
 // Routes
 app.post('/api/auth/login', (req, res) => {
-  const { phone, password } = req.body;
-  if (!phone || !password) return res.status(400).json({ error: 'Missing phone or password' });
-  const user = db.prepare('SELECT * FROM users WHERE phone = ?').get(phone);
+  const { username, password } = req.body;
+  if (!username || !password) return res.status(400).json({ error: 'Missing username or password' });
+  const user = db.prepare('SELECT * FROM users WHERE username = ?').get(username);
   if (!user || !bcrypt.compareSync(password, user.passwordHash)) {
     return res.status(401).json({ error: 'Invalid credentials' });
   }
@@ -104,7 +104,7 @@ app.post('/api/auth/verify-otp', (req, res) => {
   const rec = tempTokens.get(tempToken);
   if (!rec || rec.expires < Date.now()) return res.status(401).json({ error: 'Temp token expired' });
   if (rec.otp !== otp) return res.status(401).json({ error: 'Invalid OTP' });
-  const user = db.prepare('SELECT id, role FROM users WHERE phone = ?').get(rec.phone);
+  const user = db.prepare('SELECT id, role FROM users WHERE username = ?').get(rec.username);
   if (!user) return res.status(404).json({ error: 'User not found' });
   const token = signJwt({ sub: user.id, role: user.role }, { expiresIn: '8h' });
   res.json({ token, role: user.role });

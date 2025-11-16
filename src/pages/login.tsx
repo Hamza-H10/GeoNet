@@ -2,13 +2,13 @@ import { useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { Box, Paper, TextField, Button, Typography, InputAdornment } from '@mui/material';
-import PhoneIphoneIcon from '@mui/icons-material/PhoneIphone';
+import PersonIcon from '@mui/icons-material/Person';
 import LockIcon from '@mui/icons-material/Lock';
 import { login } from '../slices/authSlice';
 import loginBanner from '../assets/loginBanner.jpg';
 
 export default function LoginPage() {
-  const [phone, setPhone] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [info, setInfo] = useState<string>('');
   const [loading, setLoading] = useState(false);
@@ -22,13 +22,16 @@ export default function LoginPage() {
       const res = await fetch('http://localhost:5174/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone, password }),
+        body: JSON.stringify({ username, password }),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || 'Login failed');
       // Direct login - no OTP required
       dispatch(login({ role: json.role, token: json.token }));
       localStorage.setItem('jwt', json.token);
+      // Store session expiry (24 hours from now)
+      const expiryTime = Date.now() + (24 * 60 * 60 * 1000);
+      localStorage.setItem('sessionExpiry', expiryTime.toString());
       // Navigate based on user role
       if (json.role === 'user') {
         navigate('/tiltmeter2');
@@ -85,11 +88,11 @@ export default function LoginPage() {
           <Typography variant="h6" sx={{ mb: 2 }}>Login</Typography>
           
           <TextField
-            label="Phone Number"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
+            label="Username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
             fullWidth sx={{ mb: 2 }}
-            InputProps={{ startAdornment: <InputAdornment position="start"><PhoneIphoneIcon /></InputAdornment> }}
+            InputProps={{ startAdornment: <InputAdornment position="start"><PersonIcon /></InputAdornment> }}
           />
           <TextField
             label="Password"
@@ -97,14 +100,14 @@ export default function LoginPage() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             fullWidth sx={{ mb: 2 }}
-            onKeyPress={(e) => e.key === 'Enter' && !loading && phone && password && handleLoginSubmit()}
+            onKeyPress={(e) => e.key === 'Enter' && !loading && username && password && handleLoginSubmit()}
             InputProps={{ startAdornment: <InputAdornment position="start"><LockIcon /></InputAdornment> }}
           />
           <Button 
             variant="contained" 
             fullWidth 
             onClick={handleLoginSubmit} 
-            disabled={loading || !phone || !password}
+            disabled={loading || !username || !password}
             sx={{ mb: 3 }}
           >
             {loading ? 'Logging in...' : 'Login'}

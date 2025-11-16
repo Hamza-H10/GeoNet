@@ -34,6 +34,9 @@ const authSlice = createSlice({
             state.token = null;
             state.phone = null;
             state.tempToken = null;
+            // Clear session expiry from localStorage
+            localStorage.removeItem('sessionExpiry');
+            localStorage.removeItem('jwt');
         },
     },
 });

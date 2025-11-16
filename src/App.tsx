@@ -58,6 +58,19 @@ function App() {
   // Restore session on refresh using JWT -> fetch role
   useEffect(() => {
     const jwt = localStorage.getItem('jwt');
+    const sessionExpiry = localStorage.getItem('sessionExpiry');
+    
+    // Check if session has expired
+    if (sessionExpiry) {
+      const expiryTime = parseInt(sessionExpiry, 10);
+      if (Date.now() > expiryTime) {
+        // Session expired, clear storage
+        localStorage.removeItem('jwt');
+        localStorage.removeItem('sessionExpiry');
+        return;
+      }
+    }
+    
     if (jwt) {
       fetch('http://localhost:5174/api/auth/me', {
         headers: { Authorization: `Bearer ${jwt}` },
@@ -66,9 +79,17 @@ function App() {
           const json = await res.json();
           if (res.ok && json?.role) {
             dispatch(login({ role: json.role, token: jwt }));
+          } else {
+            // Invalid token, clear storage
+            localStorage.removeItem('jwt');
+            localStorage.removeItem('sessionExpiry');
           }
         })
-        .catch(() => undefined);
+        .catch(() => {
+          // Error fetching user, clear storage
+          localStorage.removeItem('jwt');
+          localStorage.removeItem('sessionExpiry');
+        });
     }
   }, [dispatch]);
 
