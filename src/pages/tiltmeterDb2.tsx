@@ -268,6 +268,61 @@ export default function TiltmeterDashboard2() {
     } catch { /* noop */ }
   };
 
+  const handleExportDashboardCsv = () => {
+    try {
+      const rows = filteredMeters.map(m => {
+        const batteryPct = healthByDevice.get(m.id) ?? null;
+        const lastUpdated = m.lastUpdated ? new Date(m.lastUpdated).toISOString() : '';
+        return [
+          m.id,
+          m.location || '',
+          m.currentX.toFixed(3),
+          m.currentY.toFixed(3),
+          yAngleToMm(m.currentY, heightMm).toFixed(2),
+          m.todayMaxX.toFixed(3),
+          m.todayMaxY.toFixed(3),
+          Math.max(m.todayMaxX, m.todayMaxY).toFixed(3),
+          m.allTimeHighX.toFixed(3),
+          m.allTimeHighY.toFixed(3),
+          Math.max(m.allTimeHighX, m.allTimeHighY).toFixed(3),
+          batteryPct != null ? batteryPct.toFixed(1) : '',
+          lastUpdated
+        ];
+      });
+      const header = [
+        'Device ID',
+        'Location',
+        'Current X (deg)',
+        'Current Y (deg)',
+        'Current Y (mm)',
+        'Today Max X (deg)',
+        'Today Max Y (deg)',
+        'Today Max (deg)',
+        'All Time High X (deg)',
+        'All Time High Y (deg)',
+        'All Time High (deg)',
+        'Battery (%)',
+        'Last Updated'
+      ];
+      const csv = [header, ...rows].map(r => r.join(',')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const now = new Date();
+      const pad = (n: number) => String(n).padStart(2, '0');
+      const ts = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}_${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(now.getSeconds())}`;
+      const filename = `tiltmeter_dashboard_${ts}.csv`;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Failed to export CSV:', err);
+    }
+  };
+
   const [alarmOpen, setAlarmOpen] = useState(false);
   const [normalCutoff, setNormalCutoff] = useState<number>(() => {
     try {
@@ -328,6 +383,7 @@ export default function TiltmeterDashboard2() {
           <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
             <Button size="small" variant={mode === 'today' ? 'contained' : 'outlined'} onClick={() => setMode('today')} sx={{ textTransform: 'none' }}>Today's Max</Button>
             <Button size="small" variant={mode === 'alltime' ? 'contained' : 'outlined'} onClick={() => setMode('alltime')} sx={{ textTransform: 'none' }}>All Time High</Button>
+            <Button size="small" variant="outlined" onClick={handleExportDashboardCsv} startIcon={<DownloadIcon />} sx={{ textTransform: 'none' }}>Export CSV</Button>
             <FormControl size="small" sx={{ minWidth: 140, ml: 1 }}>
               <InputLabel id="size-label">Tile Size</InputLabel>
               <Select labelId="size-label" value={tileSize} label="Tile Size" onChange={(e) => setTileSize(e.target.value as 'small' | 'medium' | 'large')}>

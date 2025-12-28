@@ -72,7 +72,7 @@ function App() {
     }
     
     if (jwt) {
-      fetch('http://localhost:5174/api/auth/me', {
+      fetch('http://127.0.0.1:5174/api/auth/me', {
         headers: { Authorization: `Bearer ${jwt}` },
       })
         .then(async (res) => {

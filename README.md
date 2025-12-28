@@ -80,9 +80,17 @@ In a separate terminal, run Electron:
 npm run electron
 
 [troubleshoot section]
-Note: This loads the Vite dev server at http://localhost:5173. If the Vite dev server is not running, the Electron window will be blank.
+Note: This loads the Vite dev server at http://127.0.0.1:5173. If the Vite dev server is not running, the Electron window will be blank.
 
 [To run the app]
 npm run dev - will start the vite-react frontend
 npm run electron - will start the electron app
 npm run backend - node backend/server.cjs - will start the backend node app
+"all in the root folder"
+
+[login credentials]
+admin, admin123
+user, user123
+
+
+#To build next version

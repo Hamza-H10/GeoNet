@@ -17,7 +17,10 @@ app.use(cors());
 app.use(cors());
 app.use(bodyParser.json());
 
-const JWT_SECRET = 'dev-secret';
+const JWT_SECRET =
+  process.env.JWT_SECRET ||
+  require('crypto').randomBytes(32).toString('hex');
+
 
 // temp token store
 const tempTokens = new Map<string, { phone: string; otp: string; expires: number }>();
@@ -57,4 +60,4 @@ app.get('/api/auth/me', (req, res) => {
 });
 
 const port = 5174;
-app.listen(port, () => console.log(`Auth server listening on http://localhost:${port}`));
+app.listen(port, () => console.log(`Auth server listening on http://127.0.0.1:${port}`));

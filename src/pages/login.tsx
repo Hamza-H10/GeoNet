@@ -19,7 +19,11 @@ export default function LoginPage() {
     setLoading(true);
     setInfo('');
     try {
-      const res = await fetch('http://localhost:5174/api/auth/login', {
+      const API_BASE =
+        import.meta.env.VITE_API_BASE_URL ||
+        'http://127.0.0.1:5174';
+
+      const res = await fetch(`${API_BASE}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),
@@ -86,7 +90,7 @@ export default function LoginPage() {
         {/* Right side form */}
         <Box sx={{ p: 3, width: { xs: '100%', md: '50%' }, height: '100%', overflowY: 'auto' }}>
           <Typography variant="h6" sx={{ mb: 2 }}>Login</Typography>
-          
+
           <TextField
             label="Username"
             value={username}
@@ -103,10 +107,10 @@ export default function LoginPage() {
             onKeyPress={(e) => e.key === 'Enter' && !loading && username && password && handleLoginSubmit()}
             InputProps={{ startAdornment: <InputAdornment position="start"><LockIcon /></InputAdornment> }}
           />
-          <Button 
-            variant="contained" 
-            fullWidth 
-            onClick={handleLoginSubmit} 
+          <Button
+            variant="contained"
+            fullWidth
+            onClick={handleLoginSubmit}
             disabled={loading || !username || !password}
             sx={{ mb: 3 }}
           >
@@ -114,9 +118,9 @@ export default function LoginPage() {
           </Button>
 
           {!!info && (
-            <Typography 
-              variant="body2" 
-              color="error" 
+            <Typography
+              variant="body2"
+              color="error"
               sx={{ mt: 2, p: 1, bgcolor: '#ffebee', borderRadius: 1 }}
             >
               {info}

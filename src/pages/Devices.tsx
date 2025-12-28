@@ -44,14 +44,14 @@ interface Device {
   category?: string;
 }
 interface Category { id: number; name: string }
-const CATS_API = 'http://localhost:5174/api/categories';
+const CATS_API = 'http://127.0.0.1:5174/api/categories';
 
 // API config
-const API_URL = 'http://localhost:5174/api/devices';
+const API_URL = 'http://127.0.0.1:5174/api/devices';
 const downloadLinks = [
-  { label: 'CSV', url: 'http://localhost:5174/api/devices/export/csv' },
-  { label: 'TXT', url: 'http://localhost:5174/api/devices/export/txt' },
-  { label: 'Excel', url: 'http://localhost:5174/api/devices/export/xlsx' },
+  { label: 'CSV', url: 'http://127.0.0.1:5174/api/devices/export/csv' },
+  { label: 'TXT', url: 'http://127.0.0.1:5174/api/devices/export/txt' },
+  { label: 'Excel', url: 'http://127.0.0.1:5174/api/devices/export/xlsx' },
 ];
 
 // Device form dialog
@@ -306,7 +306,7 @@ export default function Devices() {
               try {
                 const dev = availableBluetoothDevices.find(d => d.id === selectedBtDevice);
                 if (dev) {
-                  await fetch('http://localhost:5174/api/paired-devices', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ address: dev.id, name: dev.name }) });
+                  await fetch('http://127.0.0.1:5174/api/paired-devices', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ address: dev.id, name: dev.name }) });
                 }
               } catch (err) { console.error('Bluetooth pairing failed', err); }
               setTimeout(() => setPairing(false), 800);
@@ -399,7 +399,7 @@ export default function Devices() {
               {loadError && (
                 <TableRow>
                   <TableCell colSpan={9}>
-                    Failed to load devices: {loadError}. Ensure backend is running on http://localhost:5174.
+                    Failed to load devices: {loadError}. Ensure backend is running on http://127.0.0.1:5174.
                   </TableCell>
                 </TableRow>
               )}

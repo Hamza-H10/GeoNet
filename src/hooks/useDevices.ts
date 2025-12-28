@@ -11,7 +11,7 @@ export interface Device {
     category?: string;
 }
 
-const API_URL = 'http://localhost:5174/api/devices';
+const API_URL = 'http://127.0.0.1:5174/api/devices';
 
 export function useDevicesByCategory(category: string) {
     const [devices, setDevices] = useState<Device[]>([]);

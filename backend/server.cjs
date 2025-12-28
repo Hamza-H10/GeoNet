@@ -1,22 +1,83 @@
 'use strict';
-const express = require('express');
-const cors = require('cors');
-const bodyParser = require('body-parser');
-const jwt = require('jsonwebtoken');
-const bcrypt = require('bcryptjs');
-const fs = require('fs');
-const path = require('path');
-const Database = require('better-sqlite3');
+
+// Log startup immediately
+console.log('[Backend] Starting GeoDesk backend server...');
+console.log(`[Backend] Process PID: ${process.pid}`);
+console.log(`[Backend] Working directory: ${process.cwd()}`);
+console.log(`[Backend] Node version: ${process.version}`);
+console.log(`[Backend] NODE_PATH: ${process.env.NODE_PATH || 'not set'}`);
+
+// Try to load modules with error handling
+let express, cors, bodyParser, jwt, bcrypt, fs, path, Database;
+
+try {
+  console.log('[Backend] Loading modules...');
+  express = require('express');
+  cors = require('cors');
+  bodyParser = require('body-parser');
+  jwt = require('jsonwebtoken');
+  bcrypt = require('bcryptjs');
+  fs = require('fs');
+  path = require('path');
+  Database = require('better-sqlite3');
+  console.log('[Backend] All modules loaded successfully');
+} catch (error) {
+  console.error('[Backend] ❌ Failed to load modules:', error.message);
+  console.error('[Backend] Error stack:', error.stack);
+  console.error('[Backend] NODE_PATH:', process.env.NODE_PATH);
+  console.error('[Backend] Module search paths:', require('module')._nodeModulePaths(process.cwd()));
+  process.exit(1);
+}
 
 const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
-const JWT_SECRET = 'dev-secret';
+// SQLite DB setup - support both Electron and standalone modes
+let dataDir;
 
-// SQLite DB setup
-const dataDir = path.join(__dirname, 'data');
-if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+// Check if running as standalone process (spawned from Electron)
+// When spawned, Electron is not available
+let useElectronPath = false;
+
+if (process.env.ELECTRON_RUN_AS_NODE !== '1' && typeof process.versions.electron !== 'undefined') {
+  try {
+    // Try to use Electron's userData path if available
+    const { app: electronApp } = require('electron');
+    dataDir = path.join(electronApp.getPath('userData'), 'data');
+    useElectronPath = true;
+  } catch (e) {
+    // Electron not available, use fallback
+    useElectronPath = false;
+  }
+}
+
+if (!useElectronPath) {
+  // Fallback to app data directory when running standalone
+  const os = require('os');
+  const appDataPath = process.platform === 'win32' 
+    ? process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming')
+    : process.platform === 'darwin'
+    ? path.join(os.homedir(), 'Library', 'Application Support')
+    : process.env.XDG_DATA_HOME || path.join(os.homedir(), '.local', 'share');
+  
+  dataDir = path.join(appDataPath, 'GeoDesk', 'data');
+}
+if (!fs.existsSync(dataDir)) {
+  fs.mkdirSync(dataDir, { recursive: true });
+}
+
+// JWT secret (persistent across restarts)
+const secretFile = path.join(dataDir, 'jwt.secret');
+
+let JWT_SECRET;
+if (fs.existsSync(secretFile)) {
+  JWT_SECRET = fs.readFileSync(secretFile, 'utf8');
+} else {
+  JWT_SECRET = require('crypto').randomBytes(32).toString('hex');
+  fs.writeFileSync(secretFile, JWT_SECRET);
+}
+
 const dbPath = path.join(dataDir, 'app.db');
 const db = new Database(dbPath);
 
@@ -311,4 +372,17 @@ app.post('/api/users', requireAuth, requireAdmin, (req, res) => {
 });
 
 const port = 5174;
-app.listen(port, () => console.log(`Backend listening on http://localhost:${port}`));
+
+// Log startup information
+console.log('='.repeat(50));
+console.log('GeoDesk Backend Server Starting...');
+console.log(`Node version: ${process.version}`);
+console.log(`Platform: ${process.platform}`);
+console.log(`Data directory: ${dataDir}`);
+console.log(`NODE_PATH: ${process.env.NODE_PATH || 'not set'}`);
+console.log('='.repeat(50));
+
+app.listen(port, () => {
+  console.log(`✅ Backend listening on http://127.0.0.1:${port}`);
+  console.log('Backend server is ready to accept connections.');
+});

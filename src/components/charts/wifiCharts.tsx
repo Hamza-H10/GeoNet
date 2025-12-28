@@ -32,7 +32,7 @@ export function WifiAccelerationDashboard() {
         // Fetch data from the ESP32 server.
         // Note: You may need to configure CORS on the server or use a proxy
         // if you run into cross-origin issues.
-        const response = await fetch('http://localhost:9080');
+        const response = await fetch('http://127.0.0.1:9080');
         if (!response.ok) {
           console.error(`Error fetching data from ESP32: ${response.statusText}`);
           return;
