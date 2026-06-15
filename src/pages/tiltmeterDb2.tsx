@@ -48,7 +48,7 @@ import { valueFor, meterColor, computeSummary, type Meter, buildMeters, type Raw
 // Candidate device IDs to read from Firestore
 const CANDIDATE_DEVICE_IDS = ['tm1', 'tm2', 'tm3', 'tm4', 'tm5'];
 const FIRESTORE_BASE = 'https://firestore.googleapis.com/v1/projects/hamexlabs-metro/databases/(default)/documents/tiltmeter';
-const FIRESTORE_API_KEY = 'AIzaSyChzg_JqqEJfvOdxINMf8JP4gOWCeRtdcA';
+const FIRESTORE_API_KEY = import.meta.env.VITE_FIRESTORE_API_KEY as string;
 
 // Parse Firestore timestamp to epoch millis
 function parseFirestoreTimestamp(timestampValue: string): number {

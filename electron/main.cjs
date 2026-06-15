@@ -3,6 +3,14 @@ const { SerialPort } = require('serialport');
 const path = require('path');
 const { spawn } = require('child_process');
 
+// Reduce console spam from Chromium
+process.env.ELECTRON_DISABLE_SECURITY_WARNINGS = 'true';
+
+// Add command line switches to reduce errors
+app.commandLine.appendSwitch('disable-features', 'VizDisplayCompositor');
+app.commandLine.appendSwitch('disable-logging');
+app.commandLine.appendSwitch('disable-dev-shm-usage');
+
 let mainWindow;
 let backendProcess = null;
 
@@ -169,6 +177,14 @@ function startBackend() {
       console.error(`Backend stderr: ${backendErrors}`);
     }
     backendProcess = null;
+    
+    // Notify renderer process of backend failure
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('backend-error', {
+        message: 'Backend server failed to start',
+        error: err.message
+      });
+    }
   });
 
   backendProcess.on('exit', (code, signal) => {
@@ -270,7 +286,11 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.cjs'),
       contextIsolation: true,
       nodeIntegration: false,
+      webSecurity: true,
+      allowRunningInsecureContent: false,
+      experimentalFeatures: false,
     },
+    show: false, // Don't show window until ready
   });
 
   if (app.isPackaged) {
@@ -282,6 +302,16 @@ function createWindow() {
     mainWindow.loadURL('http://127.0.0.1:5173');
     mainWindow.webContents.openDevTools();
   }
+
+  // Show window when ready to prevent flash
+  mainWindow.once('ready-to-show', () => {
+    mainWindow.show();
+  });
+
+  // Handle window closed
+  mainWindow.on('closed', () => {
+    mainWindow = null;
+  });
 }
 
 /* ─────────────────────────────────────────────

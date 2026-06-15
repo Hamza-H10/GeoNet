@@ -26,3 +26,9 @@ backend/node_modules/
 *.sw?
 
 out/
+
+# Environment variable files (contain secrets)
+.env
+.env.local
+.env.production
+.env*.local
